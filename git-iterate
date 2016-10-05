@@ -2,6 +2,7 @@
 #
 # Execute Git commands on multiple directories and subdirectories
 # > git iterate [-v|-V] DIR1 DIR2 ... -- GIT_COMMAND ...
+# > git iterate [-v|-V] DIR1 DIR2 ... foreach SHELL_COMMAND ...
 #
 # Parameters:
 #   -q: Remove all non-error output
