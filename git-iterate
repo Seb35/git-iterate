@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+# Execute Git commands on multiple directories and subdirectories
+# > git iterate [-v|-V] DIR1 DIR2 ... -- GIT_COMMAND ...
+#
+# Parameters:
+#   -q: Remove all non-error output
+#   --quiet: Remove announcement of the directories in which there are operations
+#   DIR*: list of super-directories, Git commands will be executed on each valid sub-directory
+#   GIT_COMMAND and next parameters: Git commands to be executed on each Git directory
+#
+# License: WTFPL 2.0 - Seb35
+
+IFS=$'\n'
+
+function search_git_folders() {
+  git --git-dir="$1" branch >/dev/null 2>&1
+  if [ $? = 0 ]
+  then
+    echo "$1"
+  else
+    git --git-dir="$1/.git" branch >/dev/null 2>&1
+    if [ $? = 0 ]
+    then
+      echo "$1"
+    else
+      for folder in $(find "$1" -mindepth 1 -maxdepth 1 -type d)
+      do
+        search_git_folders "$folder"
+      done
+    fi
+  fi
+}
+
+# Catch "verbose" option
+quiet="false"
+if [ "$1" = "-q" ]
+then
+  quiet="true"
+  shift
+elif [ "$1" = "--quiet" ]
+then
+  quiet="moderate"
+  shift
+fi
+
+# Get folders
+folders=""
+foreach="false"
+for folder in "$@"
+do
+  shift
+  if [ "$folder" = "--" ]
+  then
+    break
+  elif [ "$folder" = "foreach" ]
+  then
+    foreach="true"
+    break
+  fi
+  folders="$folders
+$folder"
+done
+
+# If no folder is given, use local directory (recursively)
+if [ "$folders" = "" ]
+then
+  folders=*
+fi
+
+# Iterate over each folder
+first="true"
+for folder in $folders
+do
+  folders=$(search_git_folders "$folder")
+  for git_folder in $folders
+  do
+    cd "$git_folder"
+    if [ "$quiet" = "true" ]
+    then
+      if [ "$foreach" = "false" ]
+      then
+        errors=$(git $@ 2>&1)
+      else
+        errors=$($@ 2>&1)
+      fi
+      if [ "$?" != 0 ]
+      then
+        if [ "$first" = "false" ]
+        then
+          echo >&2
+        fi
+        first="false"
+        echo $git_folder >&2
+        echo "$errors" >&2
+        echo "Error $? in $git_folder" >&2
+      fi
+    else
+      if [ "$quiet" != "moderate" ]
+      then
+        echo -e "\033[1m$git_folder\033[0m"
+      fi
+      if [ "$foreach" = "false" ]
+      then
+        git $@
+        errors="$?"
+      else
+        eval $@
+        errors="$?"
+      fi
+      if [ "$errors" != 0 ]
+      then
+        echo "Error $errors in $git_folder" >&2
+      fi
+    fi
+    cd "$OLDPWD"
+  done
+done
