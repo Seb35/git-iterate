@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Execute Git commands on multiple directories and subdirectories
 # > git iterate [-q|--quiet] DIR1 DIR2 ... -- GIT_COMMAND ...
@@ -12,9 +12,8 @@
 #
 # License: WTFPL 2.0 - Seb35
 
-IFS=$'\n'
-
-function search_git_folders() {
+# Recursively search all Git directories
+search_git_folders() {
   git --git-dir="$1" branch >/dev/null 2>&1
   if [ $? = 0 ]
   then
@@ -25,7 +24,7 @@ function search_git_folders() {
     then
       echo "$1"
     else
-      for folder in $(find "$1" -mindepth 1 -maxdepth 1 -type d)
+      for folder in `find "$1" -mindepth 1 -maxdepth 1 -type d|sort`
       do
         search_git_folders "$folder"
       done
@@ -99,7 +98,7 @@ do
     else
       if [ "$quiet" != "moderate" ]
       then
-        echo -e "\033[1m$git_folder\033[0m"
+        echo "\033[1m$git_folder\033[0m"
       fi
       if [ "$foreach" = "false" ]
       then

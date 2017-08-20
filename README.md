@@ -6,8 +6,8 @@ If you have to repeat a same Git operation over a bunch of subdirectories (e.g. 
 Examples:
 ```
 git iterate -- status
-git iterate -q mydir1 mydir2 -- fetch --all
-git iterate -q mydir1 mydir2 foreach myscript.sh
+git iterate -q dir1 dir2 -- fetch --all
+git iterate -q dir1 dir2 foreach myscript.sh
 ```
 
 Syntax
@@ -25,7 +25,7 @@ git iterate [-q|--quiet] [DIR1] [DIR2] [DIRS...] -- SUBCOMMAND [OPTIONS]
 
 ### Non-Git commands:
 ```
-git iterate [-q|--quiet] [DIR1] [DIR2] [DIRS...] -- SHELLCOMMAND [OPTIONS]
+git iterate [-q|--quiet] [DIR1] [DIR2] [DIRS...] foreach SHELLCOMMAND [OPTIONS]
 ```
 
 * -q: [optional] Remove all non-error output
@@ -45,7 +45,6 @@ Contribute
 Although this is a small program, any contribution is welcome! Please [open an issue](https://github.com/Seb35/git-iterate/issues) to discuss ideas or bugs, or even [submit pull requests](https://github.com/Seb35/git-iterate/pulls) to propose implementations.
 
 This is a small nice-to-do list:
-* test in various environments -- I only tested it on Debian with Bash
-* possibly write it in a wider-understood Shell dialect (Bourne Shell)
+* test in various environments -- I only tested it on Debian
 * improve documentation
 * write unit tests
