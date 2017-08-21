@@ -72,7 +72,7 @@ fi
 first="true"
 for folder in $folders
 do
-  folders=$(search_git_folders "$folder")
+  folders=`search_git_folders "$folder"`
   for git_folder in $folders
   do
     cd "$git_folder"
@@ -80,9 +80,9 @@ do
     then
       if [ "$foreach" = "false" ]
       then
-        errors=$(git $@ 2>&1)
+        errors=`git $@ 2>&1`
       else
-        errors=$($@ 2>&1)
+        errors=`$@ 2>&1`
       fi
       if [ "$?" != 0 ]
       then
@@ -91,7 +91,7 @@ do
           echo >&2
         fi
         first="false"
-        echo $git_folder >&2
+        echo "\033[1m$git_folder\033[0m" >&2
         echo "$errors" >&2
         echo "Error $? in $git_folder" >&2
       fi
