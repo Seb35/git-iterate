@@ -1,0 +1,92 @@
+'\" t
+.\"     Title: git-iterate
+.\"    Author: Sébastien Beyou, a.k.a. Seb35
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: August 21st, 2017
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-ITERATE" "1" "August 21st, 2017" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+git-iterate \- Apply a Git command in all Git subdirectories
+.SH "SYNOPSIS"
+.sp
+.nf
+\fIgit iterate\fR [\-\-quiet] [\-q] [<dir>...] -- <command>
+\fIgit iterate\fR [\-\-quiet] [\-q] [<dir>...] foreach <shellcommand>
+.fi
+.sp
+.SH "DESCRIPTION"
+.sp
+Apply a given command in all subdirectories which happend to be Git directories.
+.sp
+The command can be either a standard Git command either a shell command depending on the syntax\&.
+.sp
+Be warn that if a Git directory is found, it is not searched inside this directory if other Git directories exist\&.
+.sp
+.SH "OPTIONS"
+.PP
+<dir>\&...
+.RS 4
+List of root directories in which Git directories will be searched in\&. Possibly many values separated by spaces\&. If no values are given here, the current directory is used\&.
+.RE
+.PP
+<command>
+.RS 4
+Standard Git command to be executed in each Git directory found\&. Parameters for the Git command can follow\&.
+.RE
+.PP
+<shellcommand>
+.RS 4
+Shell command to be executed in each Git directory found\&. Parameters for the shell command can follow\&.
+.RE
+.PP
+\-q
+.RS 4
+Remove all non-error output\&.
+.RE
+.PP
+\-\-quiet
+.RS 4
+Remove announcement of the directories in which there are operations\&.
+.RE
+.SH "EXAMPLES"
+.PP
+git iterate \-\- status \-s
+.RS 4
+Display statuses of all Git directories contained in the current directory\&.
+.RE
+.PP
+git iterate lib vendor \-\- rev-parse --symbolic-full-name HEAD
+.RS 4
+Get current branches for all Git directories contained in the subdirectories lib and vendor\&.
+.RE
+.PP
+git iterate foreach echo -n
+.RS 4
+Display only Git directories contained in the current directory\&.
+.RE
+.PP
+git iterate --quiet -- status -s
+.RS 4
+Display statuses of all Git directories contained in the current directory, without displaying the directory names: there is an output if and only if some Git directory is not in a committed state\&.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBgit-submodule\fR(1)
+.SH "GIT"
+.sp
+Extension program for the \fBgit\fR(1) suite
