@@ -1,54 +1,132 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Execute Git commands on multiple directories and subdirectories
-# > git iterate [-q|--quiet] DIR1 DIR2 ... -- GIT_COMMAND ...
-# > git iterate [-q|--quiet] DIR1 DIR2 ... foreach SHELL_COMMAND ...
+# > git iterate [-v|-V] DIR1 DIR2 ... -- GIT_COMMAND ...
 #
 # Parameters:
-#   -q: Remove all non-error output
-#   --quiet: Remove announcement of the directories in which there are operations
+#   -v: Tell in standard error output in which directory the Git command is operating
+#   -V: Tell in standard output in which directory the Git command is operating
 #   DIR*: list of super-directories, Git commands will be executed on each valid sub-directory
 #   GIT_COMMAND and next parameters: Git commands to be executed on each Git directory
-#
-# License: WTFPL 2.0 - Seb35
 
-# Recursively search all Git directories
-search_git_folders() {
-  git --git-dir="$1" branch >/dev/null 2>&1
-  if [ $? = 0 ]
+IFS=$'\n'
+export GIT_PROGRESS_DELAY=-1 
+
+function search_git_folders() {
+  if [ ! -d "$1" ]
   then
-    echo "$1"
+    return
+  elif [ ! -f "$1/.git" -a ! -d "$1/.git" -a ! -d "$1/refs" ]
+  then
+    for folder in $(find "$1" -mindepth 1 -maxdepth 1 -type d)
+    do
+      search_git_folders "$folder"
+    done
   else
-    git --git-dir="$1/.git" branch >/dev/null 2>&1
+    git --git-dir="$1" branch >/dev/null 2>&1
     if [ $? = 0 ]
     then
       echo "$1"
     else
-      for folder in `find "$1" -mindepth 1 -maxdepth 1 -type d|sort`
-      do
-        search_git_folders "$folder"
-      done
+      git --git-dir="$1/.git" branch >/dev/null 2>&1
+      if [ $? = 0 ]
+      then
+        echo "$1"
+      else
+        for folder in $(find "$1" -mindepth 1 -maxdepth 1 -type d)
+        do
+          search_git_folders "$folder"
+        done
+      fi
     fi
   fi
 }
 
-# Catch "verbose" option
-quiet="false"
-if [ "$1" = "-q" ]
-then
-  quiet="true"
-  shift
-elif [ "$1" = "--quiet" ]
-then
-  quiet="moderate"
-  shift
-fi
-
 # Get folders
 folders=""
 foreach="false"
+options=""
+quiet="false"
+display_only="false"
+clean=""
+behind=""
+ahead=""
+detached=""
 for folder in "$@"
 do
+  if [ -z "$options" ]; then
+    if [ "$folder" = "-q" ]; then
+      shift
+      quiet="moderate"
+      continue
+    elif [ "$folder" = "-qq" -o "$folder" = "--quiet" ]; then
+      shift
+      quiet="true"
+      continue
+    elif [ "$folder" = "--to-be-cleaned" ]; then
+      shift
+      clean="-3"
+      continue
+    elif [ "$folder" = "--very-unclean" ]; then
+      shift
+      clean="-2"
+      continue
+    elif [ "$folder" = "--unclean" ]; then
+      shift
+      clean="-1"
+      continue
+    elif [ "$folder" = "--almost-clean" ]; then
+      shift
+      clean="1"
+      continue
+    elif [ "$folder" = "--quite-clean" ]; then
+      shift
+      clean="2"
+      continue
+    elif [ "$folder" = "--clean" ]; then
+      shift
+      clean="3"
+      continue
+    elif [ "$folder" = "--very-clean" ]; then
+      shift
+      clean="4"
+      continue
+    elif [ "$folder" = "--very-very-clean" ]; then
+      shift
+      clean="5"
+      continue
+    elif [ "$folder" = "--late" -o "$folder" = "--behind" ]; then
+      shift
+      behind="1"
+      continue
+    elif [ "$folder" = "--not-late" -o "$folder" = "--not-behind" ]; then
+      shift
+      behind="-1"
+      continue
+    elif [ "$folder" = "--ahead" ]; then
+      shift
+      ahead="1"
+      continue
+    elif [ "$folder" = "--not-ahead" ]; then
+      shift
+      ahead="-1"
+      continue
+    elif [ "$folder" = "--late-or-ahead" -o "$folder" = "--behind-or-ahead" ]; then
+      shift
+      behind="2"
+      ahead="2"
+      continue
+    elif [ "$folder" = "--detached" ]; then
+      shift
+      detached="true"
+      continue
+    elif [ "$folder" = "--not-detached" ]; then
+      shift
+      detached="false"
+      continue
+    fi
+  fi
+  options="1"
   shift
   if [ "$folder" = "--" ]
   then
@@ -58,8 +136,7 @@ do
     foreach="true"
     break
   fi
-  folders="$folders
-$folder"
+  folders="$folders"$'\n'"$folder"
 done
 
 # If no folder is given, use local directory (recursively)
@@ -68,21 +145,162 @@ then
   folders=*
 fi
 
+#echo quiet="$quiet"
+#echo foreach="$foreach"
+#echo clean="$clean"
+#echo folders="$folders"
+#echo $behind
+#echo $ahead
+
+if [ "$#" = 0 ]; then
+  display_only="true"
+fi
+
 # Iterate over each folder
 first="true"
 for folder in $folders
 do
-  folders=`search_git_folders "$folder"`
+  folders=$(search_git_folders "$folder")
   for git_folder in $folders
   do
     cd "$git_folder"
+    # First check if the Git repo is eligible regarding its status and remote-tracking status
+    if [ "$clean" = "-3" ]; then
+      status1=$(git status --short)
+      status2=$(git stash list)
+      status3=$(LANG="en" git branch --list -vv)
+      status4=$(echo "$status3"|grep "^*"|grep -F -e " behind " -e " ahead ")
+      status5=$(echo "$status3"|grep "^* (HEAD detached at ")
+      # Display if ( $status1 !== "" || $status2 !== "" || $status3 === "" || $status4 !== "" || $status5 !== "" )
+      if [ -z "$status1" -a -z "$status2" -a -n "$status3" -a -z "$status4" -a -z "$status5" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "-2" ]; then
+      status=$(git status --short|grep -v "^??")
+      if [ -z "$status" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "-1" ]; then
+      status=$(git status --short)
+      if [ -z "$status" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "1" ]; then
+      status1=$(git status --short)
+      status2=$(echo "$status1"|grep -v "^??")
+      status3=$(git stash list)
+      # Display if ( ( status1 !== "" && status2 === "" ) || ( status2 === "" && status3 !== "" ) )
+      # Display if status2 === "" && ( status1 !== "" || status3 !== "" )
+      # Do not display if ( ( status1 === "" || status2 !== "" ) && status3 === "" )
+      # Do not display if status2 !== "" || ( status1 === "" && status3 === "" )
+      #if [ \( -z "$status1" -o -n "$status2" \) -a -z "$status3" ]; then
+      if [ -n "$status2" -o \( -z "$status1" -a -z "$status3" \) ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "2" ]; then
+      status=$(git status --short|grep -v "^??")
+      if [ -n "$status" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "3" ]; then
+      status=$(git status --short)
+      if [ -n "$status" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "4" ]; then
+      status=$(git status --ignored --short)
+      if [ -n "$status" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$clean" = "5" ]; then
+      status1=$(git status --ignored --short)
+      status2=$(git stash list)
+      if [ -n "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    behind_found="0"
+    if [ "$behind" = "1" -o "$behind" = "2" ]; then
+      # TODO could be improved: there are false positive if the commit message contains " behind "
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^*"|grep -F " behind ")
+      # Display if ( status1 !== "" && status2 !== "" )
+      if [ -z "$status1" -o -z "$status2" ]; then
+        if [ "$behind" != "2" -o "$ahead" != "2" ]; then
+          cd "$OLDPWD"
+          continue
+        fi
+      else
+        behind_found="1"
+      fi
+    elif [ "$behind" = "-1" ]; then
+      # TODO could be improved: there are false positive if the commit message contains " behind "
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^*"|grep -F " behind ")
+      # Display if ( status1 !== "" && status2 === "" )
+      if [ -z "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ "$ahead" = "1" -o "$ahead" = "2" ]; then
+      # TODO could be improved: there are false positive if the commit message contains " ahead "
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^*"|grep -F " ahead ")
+      # Display if ( status1 !== "" && status2 !== "" )
+      if [ -z "$status1" -o -z "$status2" ]; then
+        if [ "$behind" != "2" -o "$ahead" != "2" -o "$behind_found" != "1" ]; then
+          cd "$OLDPWD"
+          continue
+        fi
+      fi
+    elif [ "$ahead" = "-1" ]; then
+      # TODO could be improved: there are false positive if the commit message contains " ahead "
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^*"|grep -F " ahead ")
+      # Display if ( status1 !== "" && status2 === "" )
+      if [ -z "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ "$detached" = "true" ]; then
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^* (HEAD detached at ")
+      # Display if ( status1 !== "" && status2 !== "" )
+      if [ -z "$status1" -o -z "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$detached" = "false" ]; then
+      status1=$(LANG="en" git branch --list -vv)
+      status2=$(echo "$status1"|grep "^* (HEAD detached at ")
+      # Display if ( status1 !== "" && status2 === "" )
+      if [ -z "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ "$display_only" = "true" ]; then
+      echo "$folder"
+      cd "$OLDPWD"
+      continue
+    fi
     if [ "$quiet" = "true" ]
     then
       if [ "$foreach" = "false" ]
       then
-        errors=`git $@ 2>&1`
+        errors=$(git $@ 2>&1)
       else
-        errors=`$@ 2>&1`
+        errors=$($@ 2>&1)
       fi
       if [ "$?" != 0 ]
       then
@@ -91,14 +309,14 @@ do
           echo >&2
         fi
         first="false"
-        echo "\033[1m$git_folder\033[0m" >&2
+        echo $git_folder >&2
         echo "$errors" >&2
         echo "Error $? in $git_folder" >&2
       fi
     else
       if [ "$quiet" != "moderate" ]
       then
-        echo "\033[1m$git_folder\033[0m"
+        echo -e "\033[1m$git_folder\033[0m"
       fi
       if [ "$foreach" = "false" ]
       then
