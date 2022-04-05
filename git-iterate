@@ -52,6 +52,11 @@ clean=""
 behind=""
 ahead=""
 detached=""
+branch_head=""
+branch_type=""
+some_remote=""
+ref_ff_to_ref=""
+ref_strict_ff_to_ref=""
 for folder in "$@"
 do
   if [ -z "$options" ]; then
@@ -95,6 +100,14 @@ do
       shift
       clean="5"
       continue
+    elif [ "$folder" = "--tracking-head" ]; then
+      shift
+      tracking_head="1"
+      continue
+    elif [ "$folder" = "--not-tracking-head" ]; then
+      shift
+      tracking_head="0"
+      continue
     elif [ "$folder" = "--late" -o "$folder" = "--behind" ]; then
       shift
       behind="1"
@@ -123,6 +136,33 @@ do
     elif [ "$folder" = "--not-detached" ]; then
       shift
       detached="false"
+      continue
+    elif [ `echo -n "$folder"|cut -c1-9` = "--branch=" ]; then
+      shift
+      branch_head=`echo -n "$folder"|cut -c10-`
+      continue
+    elif [ `echo -n "$folder"|cut -c1-19` = "--with-some-branch=" ]; then
+      shift
+      some_branch=`echo -n "$folder"|cut -c20-`
+      some_branch=`echo -n ",$some_branch,"`
+      continue
+    elif [ `echo -n "$folder"|cut -c1-27` = "--with-some-branch-of-type=" ]; then
+      shift
+      branch_type=`echo -n "$folder"|cut -c28-`
+      branch_type=`echo -n ",$branch_type,"`
+      continue
+    elif [ `echo -n "$folder"|cut -c1-19` = "--with-some-remote=" ]; then
+      shift
+      some_remote=`echo -n "$folder"|cut -c20-`
+      some_remote=`echo -n ",$some_remote,"`
+      continue
+    elif [ `echo -n "$folder"|cut -c1-16` = "--ref-ff-to-ref=" ]; then
+      shift
+      ref_ff_to_ref=`echo -n "$folder"|cut -c17-`
+      continue
+    elif [ `echo -n "$folder"|cut -c1-23` = "--ref-strict-ff-to-ref=" ]; then
+      shift
+      ref_strict_ff_to_ref=`echo -n "$folder"|cut -c24-`
       continue
     fi
   fi
@@ -227,6 +267,35 @@ do
         continue
       fi
     fi
+    if [ "$tracking_head" = "1" ]; then
+      symbolic_head=$(LANG="en" git rev-parse --symbolic-full-name HEAD)
+      is_branch=`echo -n "$symbolic_head"|cut -c 1-11`
+      if [ "$is_branch" != "refs/heads/" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      branch=`echo -n "$symbolic_head"|cut -c 12-`
+      status1=$(LANG="en" git config "branch.$branch.remote")
+      status2=$(LANG="en" git config "branch.$branch.merge")
+      if [ -z "$status1" -o -z "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    elif [ "$tracking_head" = "0" ]; then
+      symbolic_head=$(LANG="en" git rev-parse --symbolic-full-name HEAD)
+      is_branch=`echo -n "$symbolic_head"|cut -c 1-11`
+      if [ "$is_branch" != "refs/heads/" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      branch=`echo -n "$symbolic_head"|cut -c 12-`
+      status1=$(LANG="en" git config "branch.$branch.remote")
+      status2=$(LANG="en" git config "branch.$branch.merge")
+      if [ -n "$status1" -a -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
     behind_found="0"
     if [ "$behind" = "1" -o "$behind" = "2" ]; then
       # TODO could be improved: there are false positive if the commit message contains " behind "
@@ -285,6 +354,97 @@ do
       status2=$(echo "$status1"|grep "^* (HEAD detached at ")
       # Display if ( status1 !== "" && status2 === "" )
       if [ -z "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$branch_head" ]; then
+      symbolic_head=$(LANG="en" git rev-parse --symbolic-full-name HEAD)
+      if [ "$symbolic_head" != "refs/heads/$branch_head" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$some_branch" ]; then
+      branches=$(LANG="en" git for-each-ref refs/heads/* --format='%(refname)'|cut -c12-)
+      if [ -z "$branches" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      found="false"
+      for branch in $branches; do
+        if echo "$some_branch"|grep -q ",$branch,"; then
+          found="true"
+          break
+        fi
+      done
+      if [ "$found" = "false" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$some_remote" ]; then
+      remotes=$(LANG="en" git remote show)
+      if [ -z "$remotes" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      found="false"
+      for remote in $remotes; do
+        if echo "$some_remote"|grep -q ",$remote,"; then
+          found="true"
+          break
+        fi
+      done
+      if [ "$found" = "false" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$ref_ff_to_ref" -o -n "$ref_strict_ff_to_ref" ]; then
+      if [ -n "$ref_ff_to_ref" ]; then
+        ref1=$(echo "$ref_ff_to_ref"|cut -d, -f1)
+        ref2=$(echo "$ref_ff_to_ref"|cut -d, -f2)
+      else
+        ref1=$(echo "$ref_strict_ff_to_ref"|cut -d, -f1)
+        ref2=$(echo "$ref_strict_ff_to_ref"|cut -d, -f2)
+      fi
+      nbrefs=$(LANG="en" git for-each-ref --format='%(refname)' "$ref1" "$ref2"|wc -l)
+      ref1=$(LANG="en" git for-each-ref --format='%(objectname)' "$ref1")
+      if [ "$nbrefs" != 2 ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      mergebase=$(LANG="en" git merge-base "$ref1" "$ref2")
+      if [ "$mergebase" != "$ref1" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      if [ -n "$ref_strict_ff_to_ref" ]; then
+        ref2=$(LANG="en" git for-each-ref --format='%(objectname)' "$ref2")
+        if [ "$mergebase" = "$ref2" ]; then
+          cd "$OLDPWD"
+          continue
+        fi
+      fi
+    fi
+    if [ -n "$branch_type" ]; then
+      branches=$(LANG="en" git for-each-ref refs/heads/* --format='%(refname)'|cut -c12-)
+      if [ -z "$branches" ]; then
+        continue
+      fi
+      found="false"
+      for branch in $branches; do
+        type=$(LANG="en" git config --local --get "branch.$branch.type")
+        if [ -z "$type" ]; then
+          continue
+        fi
+	if echo "$branch_type"|grep -q ",$type,"; then
+          found=true
+          break
+        fi
+      done
+      if [ "$found" = "false" ]; then
         cd "$OLDPWD"
         continue
       fi
