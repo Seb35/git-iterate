@@ -10,7 +10,7 @@
 #   GIT_COMMAND and next parameters: Git commands to be executed on each Git directory
 
 IFS=$'\n'
-export GIT_PROGRESS_DELAY=-1 
+export GIT_PROGRESS_DELAY=-1
 
 function search_git_folders() {
   if [ ! -d "$1" ]
@@ -160,7 +160,7 @@ fi
 first="true"
 for folder in $folders
 do
-  folders=$(search_git_folders "$folder")
+  folders=$(search_git_folders "$folder"|sort)
   for git_folder in $folders
   do
     cd "$git_folder"
