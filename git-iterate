@@ -42,7 +42,7 @@ function search_git_folders() {
   fi
 }
 
-# Get folders
+# Get parameters and folders
 folders=""
 foreach="false"
 options=""
@@ -137,30 +137,30 @@ do
       shift
       detached="false"
       continue
-    elif [ `echo -n "$folder"|cut -c1-9` = "--branch=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-9`" = "--branch=" ]; then
       shift
       branch_head=`echo -n "$folder"|cut -c10-`
       continue
-    elif [ `echo -n "$folder"|cut -c1-19` = "--with-some-branch=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-19`" = "--with-some-branch=" ]; then
       shift
       some_branch=`echo -n "$folder"|cut -c20-`
       some_branch=`echo -n ",$some_branch,"`
       continue
-    elif [ `echo -n "$folder"|cut -c1-27` = "--with-some-branch-of-type=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-27`" = "--with-some-branch-of-type=" ]; then
       shift
       branch_type=`echo -n "$folder"|cut -c28-`
       branch_type=`echo -n ",$branch_type,"`
       continue
-    elif [ `echo -n "$folder"|cut -c1-19` = "--with-some-remote=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-19`" = "--with-some-remote=" ]; then
       shift
       some_remote=`echo -n "$folder"|cut -c20-`
       some_remote=`echo -n ",$some_remote,"`
       continue
-    elif [ `echo -n "$folder"|cut -c1-16` = "--ref-ff-to-ref=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-16`" = "--ref-ff-to-ref=" ]; then
       shift
       ref_ff_to_ref=`echo -n "$folder"|cut -c17-`
       continue
-    elif [ `echo -n "$folder"|cut -c1-23` = "--ref-strict-ff-to-ref=" ]; then
+    elif [ "`echo -n "$folder"|cut -c1-23`" = "--ref-strict-ff-to-ref=" ]; then
       shift
       ref_strict_ff_to_ref=`echo -n "$folder"|cut -c24-`
       continue
