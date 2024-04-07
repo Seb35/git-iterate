@@ -57,6 +57,8 @@ branch_type=""
 some_remote=""
 ref_ff_to_ref=""
 ref_strict_ff_to_ref=""
+submodule=""
+conflict=""
 for folder in "$@"
 do
   if [ -z "$options" ]; then
@@ -163,6 +165,22 @@ do
     elif [ "`echo -n "$folder"|cut -c1-23`" = "--ref-strict-ff-to-ref=" ]; then
       shift
       ref_strict_ff_to_ref=`echo -n "$folder"|cut -c24-`
+      continue
+    elif [ "$folder" = "--submodule" ]; then
+      shift
+      submodule="1"
+      continue
+    elif [ "$folder" = "--not-submodule" ]; then
+      shift
+      submodule="0"
+      continue
+    elif [ "$folder" = "--conflict" ]; then
+      shift
+      conflict="1"
+      continue
+    elif [ "$folder" = "--no-conflict" ]; then
+      shift
+      conflict="0"
       continue
     fi
   fi
@@ -445,6 +463,30 @@ do
         fi
       done
       if [ "$found" = "false" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$conflict" ]; then
+      status=$(LANG="en" git -C "$OLDPWD" status --short -- "$git_folder"|cut -d' ' -f1)
+      if [ "$status" = "UU" -a "$conflict" = "0" ]; then
+        cd "$OLDPWD"
+        continue
+      elif [ "$status" != "UU" -a "$conflict" = "1" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$submodule" ]; then
+      if ! git -C "$OLDPWD" branch >/dev/null 2>&1; then
+        cd "$OLDPWD"
+        continue
+      fi
+      status=$(LANG="en" git -C "$OLDPWD" ls-files --cached --stage --full-name -- "$git_folder"|cut -d' ' -f1)
+      if [ "$status" = "160000" -a "$submodule" = "0" ]; then
+        cd "$OLDPWD"
+        continue
+      elif [ "$status" != "160000" -a "$submodule" = "1" ]; then
         cd "$OLDPWD"
         continue
       fi
