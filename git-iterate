@@ -450,7 +450,7 @@ do
       fi
     fi
     if [ "$display_only" = "true" ]; then
-      echo "$folder"
+      echo "$git_folder"
       cd "$OLDPWD"
       continue
     fi
