@@ -49,6 +49,8 @@ options=""
 quiet="false"
 display_only="false"
 clean=""
+stash=""
+tracking_head=""
 behind=""
 ahead=""
 detached=""
@@ -101,6 +103,14 @@ do
     elif [ "$folder" = "--very-very-clean" ]; then
       shift
       clean="5"
+      continue
+    elif [ "$folder" = "--has-stash" ]; then
+      shift
+      stash="1"
+      continue
+    elif [ "$folder" = "--has-no-stash" ]; then
+      shift
+      stash="0"
       continue
     elif [ "$folder" = "--tracking-head" ]; then
       shift
@@ -281,6 +291,16 @@ do
       status1=$(git status --ignored --short)
       status2=$(git stash list)
       if [ -n "$status1" -o -n "$status2" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$stash" ]; then
+      status=$(git stash list)
+      if [ -n "$status" -a "$stash" = '0' ]; then
+        cd "$OLDPWD"
+        continue
+      elif [ -z "$status" -a "$stash" = '1' ]; then
         cd "$OLDPWD"
         continue
       fi
