@@ -10,6 +10,8 @@ git iterate -q dir1 dir2 -- fetch --all
 git iterate -q dir1 dir2 foreach myscript.sh
 ```
 
+WARNING: the parameters names and exact features may change, this tool is not in a "stable" state given it evolves according to my own needs. Feedback about the parameters names and their associated features are welcome.
+
 Syntax
 ------
 
