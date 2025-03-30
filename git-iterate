@@ -499,6 +499,7 @@ do
     if [ -n "$branch_type" ]; then
       branches=$(LANG="en" git for-each-ref refs/heads/** --format='%(refname)'|cut -c12-)
       if [ -z "$branches" ]; then
+        cd "$OLDPWD"
         continue
       fi
       found="false"
