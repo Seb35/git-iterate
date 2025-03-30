@@ -434,7 +434,7 @@ do
       fi
     fi
     if [ -n "$some_branch" ]; then
-      branches=$(LANG="en" git for-each-ref refs/heads/* --format='%(refname)'|cut -c12-)
+      branches=$(LANG="en" git for-each-ref refs/heads/** --format='%(refname)'|cut -c12-)
       if [ -z "$branches" ]; then
         cd "$OLDPWD"
         continue
@@ -497,7 +497,7 @@ do
       fi
     fi
     if [ -n "$branch_type" ]; then
-      branches=$(LANG="en" git for-each-ref refs/heads/* --format='%(refname)'|cut -c12-)
+      branches=$(LANG="en" git for-each-ref refs/heads/** --format='%(refname)'|cut -c12-)
       if [ -z "$branches" ]; then
         continue
       fi
