@@ -55,6 +55,8 @@ behind=""
 ahead=""
 detached=""
 branch_head=""
+some_branch=""
+some_ref=""
 branch_type=""
 some_remote=""
 ref_ff_to_ref=""
@@ -158,6 +160,11 @@ do
       shift
       some_branch=`echo -n "$folder"|cut -c20-`
       some_branch=`echo -n ",$some_branch,"`
+      continue
+    elif [ "`echo -n "$folder"|cut -c1-16`" = "--with-some-ref=" ]; then
+      shift
+      some_ref=`echo -n "$folder"|cut -c17-`
+      some_ref=`echo -n ",$some_ref,"`
       continue
     elif [ "`echo -n "$folder"|cut -c1-27`" = "--with-some-branch-of-type=" ]; then
       shift
@@ -404,6 +411,24 @@ do
     if [ -n "$branch_head" ]; then
       symbolic_head=$(LANG="en" git rev-parse --symbolic-full-name HEAD)
       if [ "$symbolic_head" != "refs/heads/$branch_head" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$some_ref" ]; then
+      refs=$(LANG="en" git for-each-ref refs/** --format='%(refname)')
+      if [ -z "$refs" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      found="false"
+      for ref in $refs; do
+        if echo "$some_ref"|grep -q ",$ref,"; then
+          found="true"
+          break
+        fi
+      done
+      if [ "$found" = "false" ]; then
         cd "$OLDPWD"
         continue
       fi
