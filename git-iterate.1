@@ -25,15 +25,15 @@ git-iterate \- Apply a Git command in all Git subdirectories
 .SH "SYNOPSIS"
 .sp
 .nf
-\fIgit iterate\fR [\-\-quiet] [\-q] [<dir>...] -- <command>
-\fIgit iterate\fR [\-\-quiet] [\-q] [<dir>...] foreach <shellcommand>
+\fIgit iterate\fR [\-\-quiet] [\-q] [query options] [<dir>...] -- <command>
+\fIgit iterate\fR [\-\-quiet] [\-q] [query options] [<dir>...] foreach <shellcommand>
 .fi
 .sp
 .SH "DESCRIPTION"
 .sp
-Apply a given command in all subdirectories which happend to be Git directories.
+Apply a given command in all subdirectories which happend to be Git directories. If there are query options (see numerous query parameters below), only Git directories matching all these query options will be selected.
 .sp
-The command can be either a standard Git command either a shell command depending on the syntax\&.
+The command can be either a standard Git command (first syntax with "\-\-") either a shell command (second syntax with "foreach")\&.
 .sp
 Be warn that if a Git directory is found, it is not searched inside this directory if other Git directories exist\&.
 .sp
@@ -59,15 +59,165 @@ Shell command to be executed in each Git directory found\&. Parameters for the s
 Remove all non-error output\&.
 .RE
 .PP
-\-\-quiet
+\-qq, \-\-quiet
 .RS 4
 Remove announcement of the directories in which there are operations\&.
+.RE
+.PP
+\-\-detached
+.RS 4
+Filter repositories where the HEAD is detached\&.
+.RE
+.PP
+\-\-not-detached
+.RS 4
+Filter repositories where the HEAD is not detached\&.
+.RE
+.PP
+\-\-branch=BRANCH
+.RS 4
+Filter repositories where the HEAD is not detached and points to the branch BRANCH\&.
+.RE
+.PP
+\-\-tracking-head
+.RS 4
+Filter repositories where the HEAD is not detached and is tracking some remote\&.
+.RE
+.PP
+\-\-not-tracking-head
+.RS 4
+Filter repositories where the HEAD is not detached and is not tracking any remote\&.
+.RE
+.PP
+\-\-with-some-branch=BRANCH1,BRANCH2,…
+.RS 4
+Filter repositories where there is some local branch named BRANCH1 or BRANCH2 or …\&.
+.RE
+.PP
+\-\-with-some-branch-of-type=TYPE1,TYPE2,…
+.RS 4
+Filter repositories where there is some local branch whose branch.<NAME>.type is TYPE1 or TYPE2 or …\&.
+.RE
+.PP
+\-\-late, \-\-behind
+.RS 4
+Filter repositories where the HEAD has a remote branch and is behind this remote branch (NB: it may be ahead also)\&.
+.RE
+.PP
+\-\-not-late, \-\-not-behind
+.RS 4
+Filter repositories where the HEAD has a remote branch and is not behind this remote branch (NB: it may be ahead)\&.
+.RE
+.PP
+\-\-ahead
+.RS 4
+Filter repositories where the HEAD has a remote branch and is ahead of this remote branch (NB: it may be behind also)\&.
+.RE
+.PP
+\-\-not-ahead
+.RS 4
+Filter repositories where the HEAD has a remote branch and is not ahead of this remote branch (NB: it may be behind)\&.
+.RE
+.PP
+\-\-late-or-ahead, \-\-behind-or-ahead
+.RS 4
+Filter repositories where the HEAD has a remote branch and is behind or ahead of this remote branch\&.
+.RE
+.PP
+\-\-ref-ff-to-ref=REF1,REF2
+.RS 4
+Filter repositories where the REF1 is fast-forwardable to REF2\&.
+.RE
+.PP
+\-\-ref-strict-ff-to-ref=REF1,REF2
+.RS 4
+Filter repositories where the REF1 is fast-forwardable to REF2 and REF1 is different than REF2\&.
+.RE
+.PP
+\-\-with-some-remote=REMOTE1,REMOTE2,…
+.RS 4
+Filter repositories whose a remote name REMOTE1 or REMOTE2 or … does exist (it may or may not be used on local branches)\&.
+.RE
+.PP
+\-\-to-be-cleaned
+.RS 4
+Filter repositories where there are uncommitted changed files (in the index or not), or unsynchronised submodules, or in-conflict files or submodules, or non-ignored non-committed new files, or some stash (`git stash list`), or no local branch, or the HEAD points to a remote branch but is not synchronised, or the HEAD is detached. This is quite large, essentially there are uncommitted changes and/or commits to be pushed\&.
+.RE
+.PP
+\-\-very-unclean
+.RS 4
+Filter repositories where there are uncommitted changed files (in the index or not), or unsynchronised submodules, or in-conflict files or submodules\&.
+.RE
+.PP
+\-\-unclean
+.RS 4
+Filter repositories where there are uncommitted changed files (in the index or not), or unsynchronised submodules, or in-conflict files or submodules, or non-ignored non-committed new files\&.
+.RE
+.PP
+\-\-almost-clean
+.RS 4
+Filter repositories where all already-versioned files and submodules are committed, there may be non-ignored non-committed new files and/or some stash (`git stash list`)\&.
+.RE
+.PP
+\-\-quite-clean
+.RS 4
+Filter repositories where all already-versioned files and submodules are committed, there may be non-ignored non-committed new files\&.
+.RE
+.PP
+\-\-clean
+.RS 4
+Filter repositories where all already-versioned files and submodules are committed and there are no non-ignored non-committed new files\&.
+.RE
+.PP
+\-\-very-clean
+.RS 4
+Filter repositories where all already-versioned files and submodules are committed and there are no non-ignored non-committed new files neither ignored files\&.
+.RE
+.PP
+\-\-very-very-clean
+.RS 4
+Filter repositories where all already-versioned files and submodules are committed and there are no non-ignored non-committed new files neither ignored files; also there is no stash (`git stash list`)\&.
+.RE
+.PP
+\-\-has-stash
+.RS 4
+Filter repositories where there is some stash (`git stash list`)\&.
+.RE
+.PP
+\-\-has-no-stash
+.RS 4
+Filter repositories where there is no stash (`git stash list`)\&.
+.RE
+.PP
+\-\-submodule
+.RS 4
+Filter repositories which are submodules relatively to their parent directory\&.
+.RE
+.PP
+\-\-not-submodule
+.RS 4
+Filter repositories which are not a submodule relatively to their parent directory\&.
+.RE
+.PP
+\-\-conflict
+.RS 4
+Filter repositories where there are in-conflict files or submodules\&.
+.RE
+.PP
+\-\-no-conflict
+.RS 4
+Filter repositories where there are no in-conflict files or submodules\&.
 .RE
 .SH "EXAMPLES"
 .PP
 git iterate \-\- status \-s
 .RS 4
 Display statuses of all Git directories contained in the current directory\&.
+.RE
+.PP
+git iterate --not-detached \-\- branch \-vv
+.RS 4
+Display the branches of all Git directories whose the HEAD is not detached\&.
 .RE
 .PP
 git iterate lib vendor \-\- rev-parse --symbolic-full-name HEAD
