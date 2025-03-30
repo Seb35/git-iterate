@@ -61,6 +61,7 @@ ref_ff_to_ref=""
 ref_strict_ff_to_ref=""
 submodule=""
 conflict=""
+git_config_key_value=""
 for folder in "$@"
 do
   if [ -z "$options" ]; then
@@ -162,6 +163,10 @@ do
       shift
       branch_type=`echo -n "$folder"|cut -c28-`
       branch_type=`echo -n ",$branch_type,"`
+      continue
+    elif [ "`echo -n "$folder"|cut -c1-18`" = "--with-git-config=" ]; then
+      shift
+      git_config_key_value=`echo -n "$folder"|cut -c19-`
       continue
     elif [ "`echo -n "$folder"|cut -c1-19`" = "--with-some-remote=" ]; then
       shift
@@ -483,6 +488,20 @@ do
         fi
       done
       if [ "$found" = "false" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+    fi
+    if [ -n "$git_config_key_value" ]; then
+      git_key=$(echo "$git_config_key_value"|cut -d= -f1)
+      git_values=$(echo "$git_config_key_value"|cut -d= -f2)
+      git_values=`echo -n ",$git_values,"`
+      git_value=$(LANG="en" git config --local --get "$git_key")
+      if [ -z "$git_value" ]; then
+        cd "$OLDPWD"
+        continue
+      fi
+      if ! echo "$git_values"|grep -q ",$git_value,"; then
         cd "$OLDPWD"
         continue
       fi
