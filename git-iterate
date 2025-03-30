@@ -477,7 +477,7 @@ do
         if [ -z "$type" ]; then
           continue
         fi
-	if echo "$branch_type"|grep -q ",$type,"; then
+        if echo "$branch_type"|grep -q ",$type,"; then
           found=true
           break
         fi
