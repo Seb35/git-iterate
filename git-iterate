@@ -583,7 +583,12 @@ do
     else
       if [ "$quiet" != "moderate" ]
       then
-        echo -e "\033[1m$git_folder\033[0m"
+        if [ -t 1 ]
+        then
+          echo -e "\033[1m$git_folder\033[0m"
+        else
+          echo -e "$git_folder"
+        fi
       fi
       if [ "$foreach" = "false" ]
       then
