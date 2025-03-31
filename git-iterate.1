@@ -46,13 +46,14 @@ List of root directories in which Git directories will be searched in\&. Possibl
 .PP
 <command>
 .RS 4
-Standard Git command to be executed in each Git directory found\&. Parameters for the Git command can follow\&.
+Standard Git command to be executed in each Git directory found\&. Parameters for the Git command can follow\&. Example: "status --ignored"
 .RE
 .PP
 <shellcommand>
 .RS 4
-Shell command to be executed in each Git directory found\&. Parameters for the shell command can follow\&.
+Shell command to be executed in each Git directory found\&. Parameters for the shell command can follow\&. Example: "ls -A"
 .RE
+.SS "general options"
 .PP
 \-q
 .RS 4
@@ -63,6 +64,7 @@ Remove all non-error output\&.
 .RS 4
 Remove announcement of the directories in which there are operations\&.
 .RE
+.SS "query options related to branches, references, and remotes"
 .PP
 \-\-detached
 .RS 4
@@ -143,6 +145,7 @@ Filter repositories where the REF1 is fast-forwardable to REF2 and REF1 is diffe
 .RS 4
 Filter repositories whose a remote name REMOTE1 or REMOTE2 or … does exist (it may or may not be used on local branches)\&.
 .RE
+.SS "query options related to worktree"
 .PP
 \-\-to-be-cleaned
 .RS 4
@@ -213,6 +216,7 @@ Filter repositories where there are in-conflict files or submodules\&.
 .RS 4
 Filter repositories where there are no in-conflict files or submodules\&.
 .RE
+.SS "other query options"
 .PP
 \-\-with-git-config=A=B
 .RS 4
